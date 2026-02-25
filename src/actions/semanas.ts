@@ -4,8 +4,9 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
 
-export async function salvarApontamento(semanaId: string, comentarios: string, formData?: FormData) {
+export async function salvarApontamento(semanaId: string, formData: FormData) {
     const supabase = await createClient()
+    const comentarios = formData.get('comentarios') as string
 
     // 1. Identifica e valida o usuário
     const { data: { user } } = await supabase.auth.getUser()
@@ -40,7 +41,7 @@ export async function salvarApontamento(semanaId: string, comentarios: string, f
     return { success: true }
 }
 
-export async function validarSemana(semanaId: string, guiaId: string, formData?: FormData) {
+export async function validarSemana(semanaId: string, guiaId: string, formData: FormData) {
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -88,7 +89,8 @@ export async function validarSemana(semanaId: string, guiaId: string, formData?:
             .single()
 
         if (info) {
-            const mensagem = `🌟 *Alerta de Conclusão!*\nO Guia de Aprendizagem de *${info.disciplina_nome}* da turma *${info.ano_serie} ${info.turmas?.nome || ''}* foi 100% validado e concluído com sucesso.\n\nAcesse o painel CGPG para mais detalhes.`
+            const turmasObj: any = info.turmas
+            const mensagem = `🌟 *Alerta de Conclusão!*\nO Guia de Aprendizagem de *${info.disciplina_nome}* da turma *${info.ano_serie} ${turmasObj?.nome || ''}* foi 100% validado e concluído com sucesso.\n\nAcesse o painel CGPG para mais detalhes.`
 
             // Substitua pelo número real do grupo de gestão escolar ou celular do responsável
             const numeroWhatsAppCGPG = "5511999999999"

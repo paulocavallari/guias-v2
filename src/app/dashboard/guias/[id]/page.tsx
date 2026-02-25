@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { ArrowLeft, CheckCircle2, Clock, FileEdit, GraduationCap, ShieldCheck, CalendarDays } from 'lucide-react'
 import { salvarApontamento, validarSemana } from '@/actions/semanas'
 import ExportPdfButton from '@/components/ExportPdfButton'
-import ExportPdfButton from '@/components/ExportPdfButton'
 
 export default async function GuiaDetailsPage(props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
@@ -158,7 +157,7 @@ export default async function GuiaDetailsPage(props: { params: Promise<{ id: str
 
                                     {/* Form Líder */}
                                     {canApontar && semana.status_validacao !== 'Validado' ? (
-                                        <form action={salvarApontamento.bind(null, semana.id)}>
+                                        <form action={salvarApontamento.bind(null, semana.id) as any}>
                                             <textarea
                                                 name="comentarios"
                                                 defaultValue={semana.apontamentos_comentarios || ''}
@@ -188,7 +187,7 @@ export default async function GuiaDetailsPage(props: { params: Promise<{ id: str
                                                     <p className="text-xs text-slate-500">Ao validar, esta semana é travada e avança o progresso bimestral.</p>
                                                 </div>
                                             </div>
-                                            <form action={validarSemana.bind(null, semana.id, guia.id)}>
+                                            <form action={validarSemana.bind(null, semana.id, guia.id) as any}>
                                                 <button type="submit" className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm shadow-emerald-200 text-sm flex items-center gap-2">
                                                     <CheckCircle2 className="w-4 h-4" /> Aceitar e Validar
                                                 </button>
