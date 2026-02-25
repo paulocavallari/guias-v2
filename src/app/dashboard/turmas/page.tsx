@@ -54,7 +54,7 @@ export default async function TurmasPage() {
                             <h2 className="text-lg font-semibold text-slate-800">Nova Turma</h2>
                         </div>
 
-                        <form action={addTurma} className="space-y-4">
+                        <form action={addTurma as any} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">
                                     Ano/Série
@@ -100,7 +100,7 @@ export default async function TurmasPage() {
                             {turmas.map((turma) => (
                                 <div key={turma.id} className="bg-white border text-center border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center relative group hover:border-indigo-200 transition-all overflow-hidden">
                                     <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                                        <form action={deleteTurma.bind(null, turma.id)}>
+                                        <form action={deleteTurma.bind(null, turma.id) as any}>
                                             <button type="submit" className="text-red-400 hover:text-red-600 p-1.5 rounded-md hover:bg-red-50 transition-colors">
                                                 <Trash2 className="w-4 h-4" />
                                             </button>

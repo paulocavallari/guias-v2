@@ -47,7 +47,7 @@ export default async function DisciplinasPage() {
                             </div>
                             <h2 className="text-lg font-semibold text-slate-800">Nova Disciplina</h2>
                         </div>
-                        <form action={addDisciplina} className="space-y-4">
+                        <form action={addDisciplina as any} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Nome da Disciplina</label>
                                 <input
@@ -84,7 +84,7 @@ export default async function DisciplinasPage() {
                                             </div>
                                             <span className="font-medium text-slate-800">{disciplina.nome}</span>
                                         </div>
-                                        <form action={deleteDisciplina.bind(null, disciplina.id)}>
+                                        <form action={deleteDisciplina.bind(null, disciplina.id) as any}>
                                             <button type="submit" className="text-slate-300 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100">
                                                 <Trash2 className="w-4 h-4" />
                                             </button>

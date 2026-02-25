@@ -88,14 +88,14 @@ export default async function TurmaDetailsPage(props: { params: Promise<{ id: st
 
                                 <div className="flex items-center gap-2">
                                     {/* Remover da Turma */}
-                                    <form action={updateAlunoTurma.bind(null, aluno.id, null, `/dashboard/turmas/${turma.id}`)}>
+                                    <form action={updateAlunoTurma.bind(null, aluno.id, null, `/dashboard/turmas/${turma.id}`) as any}>
                                         <button type="submit" className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg border border-slate-200 transition-colors">
                                             Remover
                                         </button>
                                     </form>
 
                                     {/* Toggle Lider/Vice */}
-                                    <form action={updateAlunoCargos.bind(null, aluno.id, aluno.is_lider ? 'NENHUM' : 'LIDER', `/dashboard/turmas/${turma.id}`)}>
+                                    <form action={updateAlunoCargos.bind(null, aluno.id, aluno.is_lider ? 'NENHUM' : 'LIDER', `/dashboard/turmas/${turma.id}`) as any}>
                                         <button type="submit" className={`text-xs px-3 py-1.5 rounded-lg border flex items-center gap-1 transition-colors ${aluno.is_lider ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'}`}>
                                             <Star className={`w-3 h-3 ${aluno.is_lider ? 'fill-amber-500 text-amber-500' : ''}`} />
                                             {aluno.is_lider ? 'Remover Líder' : 'Tornar Líder'}
@@ -124,7 +124,7 @@ export default async function TurmaDetailsPage(props: { params: Promise<{ id: st
                                             <p className="text-sm font-semibold text-slate-800 truncate" title={aluno.nome}>{aluno.nome}</p>
                                             <p className="text-[11px] text-slate-500 truncate">{aluno.email}</p>
                                         </div>
-                                        <form action={updateAlunoTurma.bind(null, aluno.id, turma.id, `/dashboard/turmas/${turma.id}`)}>
+                                        <form action={updateAlunoTurma.bind(null, aluno.id, turma.id, `/dashboard/turmas/${turma.id}`) as any}>
                                             <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-lg transition-colors" title="Adicionar à Turma">
                                                 <UserPlus className="w-4 h-4" />
                                             </button>
