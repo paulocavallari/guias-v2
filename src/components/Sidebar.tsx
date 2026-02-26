@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { getServiceClient } from '@/lib/supabase-admin'
 import Link from 'next/link'
 import { BookOpenCheck, LayoutDashboard, Users, FileText, LogOut, CheckSquare, Shield } from 'lucide-react'
 
@@ -28,16 +28,17 @@ export default async function Sidebar() {
     if (!user) return null
 
     // 2. Buscar o perfil via service role (bypass RLS) para garantir leitura correta
-    const adminClient = createServiceClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const adminClient = getServiceClient()
 
-    const { data: dbUser } = await adminClient
+    const { data: dbUser, error: dbError } = await adminClient
         .from('usuarios')
         .select('role, is_lider, is_vice_lider, nome')
         .eq('id', user.id)
         .single()
+
+    if (dbError) {
+        console.error('[Sidebar] Erro ao buscar perfil do usuário:', dbError.message)
+    }
 
     const userRole = dbUser?.role || 'Aluno'
     const isLiderOrVice = dbUser?.is_lider || dbUser?.is_vice_lider
