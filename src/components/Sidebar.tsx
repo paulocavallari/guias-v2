@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getServiceClient } from '@/lib/supabase-admin'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { BookOpenCheck, LayoutDashboard, Users, FileText, LogOut, CheckSquare, Shield } from 'lucide-react'
 
@@ -89,7 +90,12 @@ export default async function Sidebar() {
             </div>
 
             <div className="p-4 border-t border-slate-800">
-                <form action="/auth/signout" method="post">
+                <form action={async () => {
+                    'use server'
+                    const supabase = await createClient()
+                    await supabase.auth.signOut()
+                    redirect('/auth/login')
+                }}>
                     <button type="submit" className="group flex w-full items-center px-3 py-2.5 text-sm font-medium rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors">
                         <LogOut className="flex-shrink-0 w-5 h-5 mr-3" />
                         Sair do Sistema
