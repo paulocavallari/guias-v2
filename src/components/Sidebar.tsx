@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { BookOpenCheck, LayoutDashboard, Users, FileText, LogOut, CheckSquare, Shield } from 'lucide-react'
 
@@ -22,12 +23,17 @@ const MENU_ITEMS: MenuItem[] = [
 export default async function Sidebar() {
     const supabase = await createClient()
 
-    // 1. Obter usuário autenticado
+    // 1. Obter usuário autenticado via sessão
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return null
 
-    // 2. Obter a role oficial do banco de dados (Tabela usuarios gravada pela trigger)
-    const { data: dbUser } = await supabase
+    // 2. Buscar o perfil via service role (bypass RLS) para garantir leitura correta
+    const adminClient = createServiceClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const { data: dbUser } = await adminClient
         .from('usuarios')
         .select('role, is_lider, is_vice_lider, nome')
         .eq('id', user.id)
