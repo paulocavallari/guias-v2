@@ -17,7 +17,7 @@ export default function UploadForm() {
     }, [state, router])
 
     return (
-        <form action={formAction} className="mt-8 space-y-6" encType="multipart/form-data">
+        <form action={formAction} className="mt-8 space-y-6">
             {/* Erro */}
             {!isPending && state?.error && (
                 <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-100 flex items-start gap-3">
@@ -47,8 +47,8 @@ export default function UploadForm() {
                         <label
                             htmlFor="guia_file"
                             className={`flex flex-col items-center justify-center border-2 border-dashed rounded-3xl p-10 text-center cursor-pointer transition-all ${selectedFile
-                                    ? 'border-indigo-400 bg-indigo-50'
-                                    : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-indigo-300'
+                                ? 'border-indigo-400 bg-indigo-50'
+                                : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-indigo-300'
                                 }`}
                         >
                             {selectedFile ? (
@@ -87,8 +87,8 @@ export default function UploadForm() {
                         type="submit"
                         disabled={!selectedFile}
                         className={`w-full py-4 font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 text-white ${selectedFile
-                                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl cursor-pointer'
-                                : 'bg-slate-300 cursor-not-allowed shadow-none'
+                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl cursor-pointer'
+                            : 'bg-slate-300 cursor-not-allowed shadow-none'
                             }`}
                     >
                         <UploadCloud className="w-5 h-5" />
