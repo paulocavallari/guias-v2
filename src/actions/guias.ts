@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { getServiceClient, getUserProfile } from '@/lib/supabase-admin'
 import { revalidatePath } from 'next/cache'
 import * as mammoth from 'mammoth'
 import { parseDocxWithAI } from './ai-parser'
@@ -11,11 +12,15 @@ export async function processDocxUpload(prevState: any, formData: FormData) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'Não autorizado.' }
 
+    const dbUser = await getUserProfile(user.id)
+    if (dbUser?.role !== 'Professor' && dbUser?.role !== 'Admin') {
+        return { error: 'Apenas professores podem importar guias.' }
+    }
+
     const file = formData.get('guia_file') as File
     if (!file) return { error: 'Nenhum arquivo enviado.' }
 
     try {
-        // 1. Lê os bytes do arquivo enviado e converte usando Mammoth
         const arrayBuffer = await file.arrayBuffer()
         const buffer = Buffer.from(arrayBuffer)
         const { value: extractedText } = await mammoth.extractRawText({ buffer })
@@ -24,10 +29,7 @@ export async function processDocxUpload(prevState: any, formData: FormData) {
             return { error: 'O arquivo DOCX está vazio ou ilegível.' }
         }
 
-        // 2. Envia para a IA do OpenRouter para parsear o texto (usando a cascata)
         const aiResponse = await parseDocxWithAI(extractedText)
-
-        // Opcionalmente remover Markdown blocks (se a IA vacilar mas enviar JSON certo)
         const cleanJsonString = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim()
 
         let parsedData
@@ -45,17 +47,17 @@ export async function processDocxUpload(prevState: any, formData: FormData) {
             return { error: 'Estrutura JSON devolvida pela IA é inválida.' }
         }
 
-        // 3. Checa/Recupera IDs de Banco - Isso simula relacionamentos flexíveis
-        // No mundo real: Professor selecionaria turma e disciplina no form, aqui usamos IA
-        // Como a IA adivinha pela string, vamos buscar a turma correta no banco
-        const { data: turmaFound } = await supabase
+        const adminClient = getServiceClient()
+
+        // Busca turma e disciplina via service client
+        const { data: turmaFound } = await adminClient
             .from('turmas')
             .select('id')
             .ilike('ano_serie', `%${cabecalho.ano_serie}%`)
             .limit(1)
             .single()
 
-        const { data: disciplinaFound } = await supabase
+        const { data: disciplinaFound } = await adminClient
             .from('disciplinas')
             .select('id')
             .ilike('nome', `%${cabecalho.disciplina_nome}%`)
@@ -63,15 +65,16 @@ export async function processDocxUpload(prevState: any, formData: FormData) {
             .single()
 
         if (!turmaFound || !disciplinaFound) {
-            return { error: `Entidades não encontradas no sistema. Certifique-se que a Turma e Disciplina existam.` }
+            return {
+                error: `Turma "${cabecalho.ano_serie}" ou Disciplina "${cabecalho.disciplina_nome}" não encontrada. Cadastre-as em Gestão de Turmas/Disciplinas primeiro.`
+            }
         }
 
-        // 4. Salva o Cabeçalho
-        const { data: newGuia, error: errGuia } = await supabase
+        const { data: newGuia, error: errGuia } = await adminClient
             .from('guias_aprendizagem')
             .insert([{
                 professor_id: user.id,
-                professor_nome: cabecalho.professor_nome,
+                professor_nome: dbUser.nome || cabecalho.professor_nome,
                 disciplina_id: disciplinaFound.id,
                 disciplina_nome: cabecalho.disciplina_nome,
                 turma_id: turmaFound.id,
@@ -89,7 +92,6 @@ export async function processDocxUpload(prevState: any, formData: FormData) {
             return { error: 'Erro ao salvar o cabeçalho do Guia.' }
         }
 
-        // 5. Salva as Semanas
         const semanasInsert = semanas.map((s: any) => ({
             guia_id: newGuia.id,
             data_semana: s.data_semana,
@@ -101,7 +103,7 @@ export async function processDocxUpload(prevState: any, formData: FormData) {
             status_validacao: 'Pendente'
         }))
 
-        const { error: errSemanas } = await supabase
+        const { error: errSemanas } = await adminClient
             .from('semanas_guia')
             .insert(semanasInsert)
 

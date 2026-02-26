@@ -1,12 +1,21 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { getServiceClient, getUserProfile } from '@/lib/supabase-admin'
 import { revalidatePath } from 'next/cache'
 
 export async function updateAlunoTurma(userId: string, turmaId: string | null, pathToRevalidate: string, formData?: FormData) {
     const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Não autorizado.' }
 
-    const { error } = await supabase
+    const dbUser = await getUserProfile(user.id)
+    if (dbUser?.role !== 'Admin' && dbUser?.role !== 'CGPG') {
+        return { error: 'Sem permissão para esta ação.' }
+    }
+
+    const adminClient = getServiceClient()
+    const { error } = await adminClient
         .from('usuarios')
         .update({ turma_id: turmaId })
         .eq('id', userId)
@@ -22,14 +31,19 @@ export async function updateAlunoTurma(userId: string, turmaId: string | null, p
 
 export async function updateAlunoCargos(userId: string, cargo: 'LIDER' | 'VICE' | 'NENHUM', pathToRevalidate: string, formData?: FormData) {
     const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Não autorizado.' }
 
-    let is_lider = false
-    let is_vice_lider = false
+    const dbUser = await getUserProfile(user.id)
+    if (dbUser?.role !== 'Admin' && dbUser?.role !== 'CGPG') {
+        return { error: 'Sem permissão para esta ação.' }
+    }
 
-    if (cargo === 'LIDER') is_lider = true
-    if (cargo === 'VICE') is_vice_lider = true
+    const is_lider = cargo === 'LIDER'
+    const is_vice_lider = cargo === 'VICE'
 
-    const { error } = await supabase
+    const adminClient = getServiceClient()
+    const { error } = await adminClient
         .from('usuarios')
         .update({ is_lider, is_vice_lider })
         .eq('id', userId)

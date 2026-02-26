@@ -1,25 +1,23 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import { ArrowLeft, CheckCircle2, Clock, FileEdit, GraduationCap, ShieldCheck, CalendarDays } from 'lucide-react'
+import Link from 'next/link'
 import { salvarApontamento, validarSemana } from '@/actions/semanas'
 import ExportPdfButton from '@/components/ExportPdfButton'
+import { getUserProfile } from '@/lib/supabase-admin'
+
+export const dynamic = 'force-dynamic'
 
 export default async function GuiaDetailsPage(props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
     const supabase = await createClient()
 
-    // --- Auth e Role Check ---
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect('/auth/login')
 
-    const { data: dbUser } = await supabase
-        .from('usuarios')
-        .select('role, is_lider, is_vice_lider, turma_id')
-        .eq('id', user.id)
-        .single()
+    const dbUser = await getUserProfile(user.id)
 
-    // --- Busca o Guia e RLS ---
+    // Busca o Guia
     const { data: guia, error: errorGuia } = await supabase
         .from('guias_aprendizagem')
         .select('*, turmas(nome), disciplinas(nome)')
@@ -30,7 +28,7 @@ export default async function GuiaDetailsPage(props: { params: Promise<{ id: str
         return <div className="p-8 text-center bg-white shadow-sm rounded-3xl">Guia não encontrado ou você não tem acesso a ele.</div>
     }
 
-    // --- Busca as Semanas ---
+    // Busca as Semanas
     const { data: semanas } = await supabase
         .from('semanas_guia')
         .select('*')
@@ -50,7 +48,7 @@ export default async function GuiaDetailsPage(props: { params: Promise<{ id: str
                 Voltar
             </Link>
 
-            {/* --- Cabeçalho do Guia --- */}
+            {/* Cabeçalho do Guia */}
             <div className="bg-white p-6 sm:p-10 rounded-3xl border border-slate-200 shadow-xl relative overflow-hidden mb-8">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-100 to-purple-50 opacity-50 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
 
@@ -61,7 +59,7 @@ export default async function GuiaDetailsPage(props: { params: Promise<{ id: str
                                 {guia.concluido ? '✓ Guia 100% Concluído' : '⏳ Em Andamento'}
                             </span>
                             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none mb-2">
-                                {guia.turmas?.nome} - {guia.disciplinas?.nome}
+                                {(guia.turmas as any)?.nome} - {(guia.disciplinas as any)?.nome}
                             </h1>
                             <p className="text-lg text-slate-500 font-medium">Bimestre {guia.bimestre} / {guia.ano_letivo}</p>
                         </div>
@@ -92,14 +90,14 @@ export default async function GuiaDetailsPage(props: { params: Promise<{ id: str
                         </div>
                         {isProfessorGuia && (
                             <div className="flex items-center justify-end">
-                                <ExportPdfButton targetId="guia-export-area" fileName={`Guia_${guia.disciplinas?.nome}_${guia.ano_serie}`} />
+                                <ExportPdfButton targetId="guia-export-area" fileName={`Guia_${(guia.disciplinas as any)?.nome}_${guia.ano_serie}`} />
                             </div>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* --- Linha do Tempo das Semanas --- */}
+            {/* Linha do Tempo das Semanas */}
             <div className="space-y-6">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-3">
                     <CalendarDays className="w-6 h-6 text-indigo-500" />
@@ -109,7 +107,7 @@ export default async function GuiaDetailsPage(props: { params: Promise<{ id: str
                 <div className="space-y-4">
                     {semanas?.map((semana, index) => (
                         <div key={semana.id} className={`bg-white rounded-3xl border shadow-sm overflow-hidden transition-all ${semana.status_validacao === 'Validado' ? 'border-emerald-200' : 'border-slate-200'}`}>
-                            {/* Cabecalho da Semana */}
+                            {/* Cabeçalho da Semana */}
                             <div className={`p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b ${semana.status_validacao === 'Validado' ? 'bg-emerald-50/30 border-emerald-100' : 'bg-slate-50 border-slate-100'}`}>
                                 <div>
                                     <div className="flex items-center gap-3 mb-1">
@@ -136,7 +134,7 @@ export default async function GuiaDetailsPage(props: { params: Promise<{ id: str
                                 </div>
                             </div>
 
-                            {/* Dados Docx Importados */}
+                            {/* Dados do Docx */}
                             <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 bg-white">
                                 <div>
                                     <p className="text-xs font-bold text-slate-400 tracking-widest uppercase mb-2">Conteúdos</p>
@@ -148,14 +146,13 @@ export default async function GuiaDetailsPage(props: { params: Promise<{ id: str
                                 </div>
                             </div>
 
-                            {/* Área do Líder (Formulário) */}
+                            {/* Área do Líder e Professor */}
                             {(isProfessorGuia || dbUser?.role === 'CGPG' || canApontar || semana.apontamentos_comentarios) && (
                                 <div className="p-6 bg-slate-50 border-t border-slate-100">
                                     <p className="text-xs font-bold text-indigo-400 tracking-widest uppercase mb-4 flex items-center gap-2">
                                         <FileEdit className="w-4 h-4" /> Relatório do Líder (Apontamento)
                                     </p>
 
-                                    {/* Form Líder */}
                                     {canApontar && semana.status_validacao !== 'Validado' ? (
                                         <form action={salvarApontamento.bind(null, semana.id) as any}>
                                             <textarea
@@ -171,13 +168,11 @@ export default async function GuiaDetailsPage(props: { params: Promise<{ id: str
                                             </div>
                                         </form>
                                     ) : (
-                                        // Visualização ReadOnly para Professor / Outros ou Se Validado
                                         <div className="bg-white border border-slate-200 rounded-xl p-5 text-sm text-slate-700 whitespace-pre-wrap">
                                             {semana.apontamentos_comentarios ? semana.apontamentos_comentarios : <span className="text-slate-400 italic">O Líder ainda não preencheu o apontamento desta semana.</span>}
                                         </div>
                                     )}
 
-                                    {/* Ação do Professor Validador */}
                                     {isProfessorGuia && semana.status_validacao === 'Aguardando Validação' && (
                                         <div className="mt-6 flex items-center justify-between bg-blue-50/50 p-4 rounded-xl border border-blue-100">
                                             <div className="flex items-center gap-3">
@@ -198,6 +193,11 @@ export default async function GuiaDetailsPage(props: { params: Promise<{ id: str
                             )}
                         </div>
                     ))}
+                    {(!semanas || semanas.length === 0) && (
+                        <div className="bg-white border border-dashed border-slate-200 rounded-3xl p-12 text-center text-slate-400">
+                            Nenhuma semana foi cadastrada para este guia ainda.
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

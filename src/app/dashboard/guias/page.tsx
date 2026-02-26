@@ -2,6 +2,9 @@ import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Plus, BookOpenText, Target, CalendarDays, BookCheck } from 'lucide-react'
+import { getUserProfile } from '@/lib/supabase-admin'
+
+export const dynamic = 'force-dynamic'
 
 export default async function GuiasPage() {
     const supabase = await createClient()
@@ -9,11 +12,8 @@ export default async function GuiasPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect('/auth/login')
 
-    const { data: dbUser } = await supabase
-        .from('usuarios')
-        .select('*, turmas(id, nome, ano_serie)')
-        .eq('id', user.id)
-        .single()
+    // Usar service client para evitar problema de RLS recursiva
+    const dbUser = await getUserProfile(user.id)
 
     let guiasQuery = supabase
         .from('guias_aprendizagem')
@@ -21,7 +21,6 @@ export default async function GuiasPage() {
         .order('created_at', { ascending: false })
 
     if (dbUser?.role === 'Aluno') {
-        // Aluno vê os guias apenas da sua turma
         if (!dbUser.turma_id) {
             return (
                 <div className="p-8 text-center bg-white border border-dashed rounded-2xl h-full flex items-center justify-center text-slate-500">
@@ -31,9 +30,9 @@ export default async function GuiasPage() {
         }
         guiasQuery = guiasQuery.eq('turma_id', dbUser.turma_id)
     } else if (dbUser?.role === 'Professor') {
-        // Professor vê os próprios guias ou guias das suas matérias
         guiasQuery = guiasQuery.eq('professor_id', user.id)
     }
+    // Admin e CGPG vêem todos os guias (sem filtro)
 
     const { data: guias, error } = await guiasQuery
 
@@ -71,13 +70,13 @@ export default async function GuiasPage() {
                                     <div className="bg-indigo-50 p-3 rounded-2xl text-indigo-600">
                                         <BookOpenText className="w-6 h-6" />
                                     </div>
-                                    <span className={`text-xs font-bold px-3 py-1 bg-slate-100 rounded-full ${guia.concluido ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${guia.concluido ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                                         {guia.concluido ? 'Concluído' : 'Em Andamento'}
                                     </span>
                                 </div>
 
                                 <h3 className="font-bold text-xl text-slate-800 mb-1">{guia.disciplina_nome}</h3>
-                                <p className="text-sm font-medium text-slate-500 mb-4">{guia.turmas?.nome} ({guia.ano_serie})</p>
+                                <p className="text-sm font-medium text-slate-500 mb-4">{(guia.turmas as any)?.nome} ({guia.ano_serie})</p>
 
                                 <div className="space-y-3 mb-6">
                                     <div className="flex items-center gap-3 text-sm text-slate-600">

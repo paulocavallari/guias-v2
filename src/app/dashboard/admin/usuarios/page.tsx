@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { Shield, Users } from 'lucide-react'
 import { updateUserRole } from '@/actions/admin'
+import { getServiceClient, getUserProfile } from '@/lib/supabase-admin'
 
 const ROLES = ['Aluno', 'Professor', 'CGPG', 'Admin'] as const
 
@@ -12,23 +13,19 @@ const ROLE_COLORS: Record<string, string> = {
     Admin: 'bg-red-100 text-red-700',
 }
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminUsuariosPage() {
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect('/auth/login')
 
-    const { data: dbUser } = await supabase
-        .from('usuarios')
-        .select('role')
-        .eq('id', user.id)
-        .single()
+    const dbUser = await getUserProfile(user.id)
+    if (dbUser?.role !== 'Admin') redirect('/dashboard')
 
-    if (dbUser?.role !== 'Admin') {
-        redirect('/dashboard')
-    }
-
-    const { data: usuarios } = await supabase
+    const adminClient = getServiceClient()
+    const { data: usuarios } = await adminClient
         .from('usuarios')
         .select('*')
         .order('nome', { ascending: true })
@@ -45,18 +42,15 @@ export default async function AdminUsuariosPage() {
                 </div>
             </div>
 
-            {/* Info box sobre CGPG */}
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex items-start gap-3">
                 <span className="text-amber-500 text-lg mt-0.5">ℹ️</span>
                 <p className="text-sm text-amber-800">
-                    <strong>Como promover um Coordenador (CGPG):</strong> Como coordenadores usam o mesmo domínio de e-mail
-                    <code className="bg-amber-100 px-1 rounded mx-1">@prof.educacao.sp.gov.br</code> que professores,
-                    a promoção é feita manualmente aqui. Altere o cargo do professor para <strong>CGPG</strong>.
+                    <strong>Como promover um Coordenador (CGPG):</strong> Selecione o novo cargo no dropdown ao lado do usuário e clique em <strong>Salvar</strong>.
                 </p>
             </div>
 
             <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-                <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                <div className="p-5 border-b border-slate-100">
                     <h2 className="font-bold text-slate-700 flex items-center gap-2">
                         <Users className="w-5 h-5 text-slate-400" />
                         Todos os Usuários ({usuarios?.length || 0})
@@ -67,8 +61,8 @@ export default async function AdminUsuariosPage() {
                     {usuarios?.map(u => (
                         <li key={u.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div className="flex items-center gap-3 min-w-0">
-                                <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 font-bold flex items-center justify-center flex-shrink-0">
-                                    {u.nome?.charAt(0) || '?'}
+                                <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 font-bold flex items-center justify-center flex-shrink-0 text-sm">
+                                    {u.nome?.charAt(0)?.toUpperCase() || '?'}
                                 </div>
                                 <div className="min-w-0">
                                     <p className="font-semibold text-slate-800 truncate">{u.nome}</p>
@@ -81,19 +75,12 @@ export default async function AdminUsuariosPage() {
                                     {u.role}
                                 </span>
 
-                                {/* Só exibe o select se NÃO for o próprio Admin logado */}
+                                {/* Cada usuário tem seu próprio form isolado */}
                                 {u.id !== user.id && (
-                                    <form action={updateUserRole.bind(null, u.id, u.role, null as any) as any}>
+                                    <form action={updateUserRole.bind(null, u.id, u.role, null as any) as any} className="flex items-center gap-2">
                                         <select
                                             name="newRole"
                                             defaultValue={u.role}
-                                            onChange={(e) => {
-                                                const form = e.target.closest('form') as HTMLFormElement
-                                                if (form) {
-                                                    const input = form.querySelector('input[name="newRole"]') as HTMLInputElement
-                                                    if (input) input.value = e.target.value
-                                                }
-                                            }}
                                             className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer"
                                         >
                                             {ROLES.map(r => (
@@ -102,7 +89,7 @@ export default async function AdminUsuariosPage() {
                                         </select>
                                         <button
                                             type="submit"
-                                            className="ml-2 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg transition-all"
+                                            className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg transition-all"
                                         >
                                             Salvar
                                         </button>

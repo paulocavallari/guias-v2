@@ -1,18 +1,24 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { getServiceClient, getUserProfile } from '@/lib/supabase-admin'
 import { revalidatePath } from 'next/cache'
 
 export async function addDisciplina(formData: FormData) {
     const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Não autorizado.' }
 
-    const nome = formData.get('nome') as string
-
-    if (!nome) {
-        return { error: 'Nome da disciplina é obrigatório.' }
+    const dbUser = await getUserProfile(user.id)
+    if (dbUser?.role !== 'Admin' && dbUser?.role !== 'CGPG') {
+        return { error: 'Sem permissão.' }
     }
 
-    const { error } = await supabase
+    const nome = formData.get('nome') as string
+    if (!nome) return { error: 'Nome da disciplina é obrigatório.' }
+
+    const adminClient = getServiceClient()
+    const { error } = await adminClient
         .from('disciplinas')
         .insert([{ nome }])
 
@@ -26,8 +32,16 @@ export async function addDisciplina(formData: FormData) {
 
 export async function deleteDisciplina(id: string, formData?: FormData) {
     const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Não autorizado.' }
 
-    const { error } = await supabase
+    const dbUser = await getUserProfile(user.id)
+    if (dbUser?.role !== 'Admin' && dbUser?.role !== 'CGPG') {
+        return { error: 'Sem permissão.' }
+    }
+
+    const adminClient = getServiceClient()
+    const { error } = await adminClient
         .from('disciplinas')
         .delete()
         .eq('id', id)

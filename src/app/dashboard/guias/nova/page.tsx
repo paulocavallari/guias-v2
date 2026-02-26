@@ -3,6 +3,9 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, BotMessageSquare } from 'lucide-react'
 import UploadForm from '@/components/UploadForm'
+import { getUserProfile } from '@/lib/supabase-admin'
+
+export const dynamic = 'force-dynamic'
 
 export default async function NovaGuiaPage() {
     const supabase = await createClient()
@@ -10,11 +13,7 @@ export default async function NovaGuiaPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect('/auth/login')
 
-    const { data: dbUser } = await supabase
-        .from('usuarios')
-        .select('role')
-        .eq('id', user.id)
-        .single()
+    const dbUser = await getUserProfile(user.id)
 
     if (dbUser?.role !== 'Admin' && dbUser?.role !== 'Professor') {
         redirect('/dashboard')
@@ -41,7 +40,6 @@ export default async function NovaGuiaPage() {
                         </div>
                     </div>
 
-                    {/* Form Component Render (Lida com Client side state) */}
                     <UploadForm />
                 </div>
             </div>
