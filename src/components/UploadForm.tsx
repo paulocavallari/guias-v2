@@ -6,13 +6,13 @@ import { UploadCloud, Loader2, Sparkles, FileText, CheckCircle2, AlertTriangle, 
 import { useRouter } from 'next/navigation'
 
 const MODELS = [
-    'gemma-3-12b',
-    'gemma-3-4b',
     'llama-3.3-70b',
-    'qwen-2.5-coder',
-    'qwen3-next-80b',
-    'nemotron-mini',
-    'phi-3-mini',
+    'gemma-3-27b',
+    'gemma-3-12b',
+    'deepseek-r1-llama-70b',
+    'mistral-7b',
+    'qwen-2.5-72b',
+    'phi-3-medium',
 ]
 
 export default function UploadForm() {
@@ -120,10 +120,10 @@ export default function UploadForm() {
                         <div className="mt-4 flex gap-1">
                             {MODELS.map((m, i) => (
                                 <div
-                                    key={m}
+                                    key={i}
                                     className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${i < currentModelIdx ? 'bg-amber-300'
-                                            : i === currentModelIdx ? 'bg-indigo-500 animate-pulse'
-                                                : 'bg-slate-200'
+                                        : i === currentModelIdx ? 'bg-indigo-500 animate-pulse'
+                                            : 'bg-slate-200'
                                         }`}
                                     title={m}
                                 />
@@ -140,8 +140,8 @@ export default function UploadForm() {
                     <label
                         htmlFor="guia_file"
                         className={`flex flex-col items-center justify-center border-2 border-dashed rounded-3xl p-10 text-center cursor-pointer transition-all ${selectedFile
-                                ? 'border-indigo-400 bg-indigo-50'
-                                : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-indigo-300'
+                            ? 'border-indigo-400 bg-indigo-50'
+                            : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-indigo-300'
                             }`}
                     >
                         {selectedFile ? (
@@ -179,8 +179,8 @@ export default function UploadForm() {
                         type="submit"
                         disabled={!selectedFile}
                         className={`w-full py-4 font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 text-white ${selectedFile
-                                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl cursor-pointer'
-                                : 'bg-slate-300 cursor-not-allowed shadow-none'
+                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl cursor-pointer'
+                            : 'bg-slate-300 cursor-not-allowed shadow-none'
                             }`}
                     >
                         <UploadCloud className="w-5 h-5" />

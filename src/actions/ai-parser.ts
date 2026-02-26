@@ -4,13 +4,13 @@ import { z } from 'zod'
 
 // Fallback Chain solicitada pelo usuario
 const MODELS_FALLBACK_CHAIN = [
-    'google/gemma-3-12b-it:free',
-    'google/gemma-3-4b-it:free',
     'meta-llama/llama-3.3-70b-instruct:free',
-    'qwen/qwen-2.5-coder-32b-instruct:free',
-    'qwen/qwen3-next-80b-a3b-instruct:free',
-    'nvidia/nemotron-mini-4b-instruct:free',
-    'microsoft/phi-3-mini-128k-instruct:free',
+    'google/gemma-3-27b-it:free',
+    'google/gemma-3-12b-it:free',
+    'deepseek/deepseek-r1-distill-llama-70b:free',
+    'mistralai/mistral-7b-instruct:free',
+    'qwen/qwen-2.5-72b-instruct:free',
+    'microsoft/phi-3-medium-128k-instruct:free',
 ]
 
 const TIMEOUT_MS = 40000 // 40 segundos por modelo
@@ -104,5 +104,5 @@ export async function parseDocxWithAI(extractedText: string) {
         }
     }
 
-    throw new Error('Falha crítica: Todos os modelos do OpenRouter do fallback deram falha ou excederam o timeout de 15 segundos.')
+    throw new Error('Falha crítica: Todos os modelos do OpenRouter deram falha ou excederam o timeout de 40 segundos. Tente novamente em alguns minutos.')
 }
