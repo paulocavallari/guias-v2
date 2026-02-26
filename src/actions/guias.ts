@@ -7,20 +7,22 @@ import * as mammoth from 'mammoth'
 import { parseDocxWithAI } from './ai-parser'
 
 export async function processDocxUpload(prevState: any, formData: FormData) {
-    const supabase = await createClient()
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { error: 'Não autorizado.' }
-
-    const dbUser = await getUserProfile(user.id)
-    if (dbUser?.role !== 'Professor' && dbUser?.role !== 'Admin') {
-        return { error: 'Apenas professores podem importar guias.' }
-    }
-
-    const file = formData.get('guia_file') as File
-    if (!file) return { error: 'Nenhum arquivo enviado.' }
-
     try {
+        const supabase = await createClient()
+
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return { error: 'Não autorizado. Faça login novamente.' }
+
+        const dbUser = await getUserProfile(user.id)
+        if (dbUser?.role !== 'Professor' && dbUser?.role !== 'Admin') {
+            return { error: 'Apenas professores e administradores podem importar guias.' }
+        }
+
+        const file = formData.get('guia_file') as File
+        if (!file || file.size === 0) return { error: 'Nenhum arquivo enviado. Selecione um arquivo .docx.' }
+
+        console.log(`[UPLOAD] Processando arquivo: ${file.name} (${file.size} bytes) por ${dbUser.email}`)
+
         const arrayBuffer = await file.arrayBuffer()
         const buffer = Buffer.from(arrayBuffer)
         const { value: extractedText } = await mammoth.extractRawText({ buffer })
