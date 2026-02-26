@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
-import { BookOpenCheck, LayoutDashboard, Users, FileText, LogOut, CheckSquare } from 'lucide-react'
+import { BookOpenCheck, LayoutDashboard, Users, FileText, LogOut, CheckSquare, Shield } from 'lucide-react'
 
 // Define a estrutura de itens do menu
 type MenuItem = {
@@ -15,6 +15,8 @@ const MENU_ITEMS: MenuItem[] = [
     { name: 'Meus Guias', href: '/dashboard/guias', icon: FileText, roles: ['Admin', 'Professor', 'Aluno'] },
     { name: 'Painel de Validação', href: '/dashboard/validacao', icon: CheckSquare, roles: ['Admin', 'Professor'] },
     { name: 'Gestão de Turmas', href: '/dashboard/turmas', icon: Users, roles: ['Admin', 'CGPG'] },
+    { name: 'Gestão de Disciplinas', href: '/dashboard/disciplinas', icon: FileText, roles: ['Admin', 'CGPG'] },
+    { name: 'Gerenciar Usuários', href: '/dashboard/admin/usuarios', icon: Shield, roles: ['Admin'] },
 ]
 
 export default async function Sidebar() {
