@@ -122,3 +122,78 @@ export async function processDocxUpload(prevState: any, formData: FormData) {
         return { error: error.message || 'Tentativa de Importação falhou no servidor.' }
     }
 }
+
+export async function createGuiaManual(prevState: any, formData: FormData) {
+    try {
+        const supabase = await createClient()
+
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return { error: 'Não autorizado. Faça login novamente.' }
+
+        const dbUser = await getUserProfile(user.id)
+        if (dbUser?.role !== 'Professor' && dbUser?.role !== 'Admin') {
+            return { error: 'Apenas professores e administradores podem criar guias.' }
+        }
+
+        const turma_id = formData.get('turma_id') as string
+        const disciplina_id = formData.get('disciplina_id') as string
+        const bimestre = parseInt(formData.get('bimestre') as string) || 1
+        const total_aulas = parseInt(formData.get('total_aulas') as string) || 20
+        const ano_letivo = parseInt(formData.get('ano_letivo') as string) || new Date().getFullYear()
+        const justificativa = formData.get('justificativa') as string
+
+        if (!turma_id || !disciplina_id) {
+            return { error: 'Turma e Disciplina são obrigatórios.' }
+        }
+
+        const adminClient = getServiceClient()
+
+        // Verify that turma and disciplina exist to fetch their names
+        const { data: turmaData, error: turmaError } = await adminClient
+            .from('turmas')
+            .select('nome, ano_serie')
+            .eq('id', turma_id)
+            .single()
+
+        if (turmaError || !turmaData) return { error: 'Turma selecionada não encontrada.' }
+
+        const { data: disciplinaData, error: disciplinaError } = await adminClient
+            .from('disciplinas')
+            .select('nome')
+            .eq('id', disciplina_id)
+            .single()
+
+        if (disciplinaError || !disciplinaData) return { error: 'Disciplina selecionada não encontrada.' }
+
+        // Insert new Guia
+        const { data: newGuia, error: insertError } = await adminClient
+            .from('guias_aprendizagem')
+            .insert([{
+                professor_id: user.id,
+                professor_nome: dbUser.nome || user.email?.split('@')[0],
+                disciplina_id: disciplina_id,
+                disciplina_nome: disciplinaData.nome,
+                turma_id: turma_id,
+                ano_serie: turmaData.ano_serie,
+                bimestre: bimestre,
+                total_aulas_bimestre: total_aulas,
+                ano_letivo: ano_letivo,
+                justificativa: justificativa || null,
+                concluido: false
+            }])
+            .select('id')
+            .single()
+
+        if (insertError || !newGuia) {
+            console.error('Erro ao inserir guia manual:', insertError)
+            return { error: 'Ocorreu um erro ao criar o Guia. Tente novamente.' }
+        }
+
+        revalidatePath('/dashboard/guias')
+        return { success: true, guiaId: newGuia.id }
+
+    } catch (error: any) {
+        console.error('Erro ao Criar Manual:', error)
+        return { error: 'Erro inesperado no servidor.' }
+    }
+}
