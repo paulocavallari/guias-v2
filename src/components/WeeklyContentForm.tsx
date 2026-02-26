@@ -72,9 +72,10 @@ export default function WeeklyContentForm({ guiaId, novaSemanaNumero }: { guiaId
                     </div>
 
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Metodologias (Opcional)</label>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Metodologias</label>
                         <textarea
                             name="metodologias"
+                            required
                             rows={3}
                             placeholder="Metodologias ativas aplicadas..."
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-slate-700 resize-none"
@@ -82,9 +83,10 @@ export default function WeeklyContentForm({ guiaId, novaSemanaNumero }: { guiaId
                     </div>
 
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Avaliação (Opcional)</label>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Avaliação</label>
                         <textarea
                             name="avaliacao"
+                            required
                             rows={3}
                             placeholder="Formas de avaliar a aprendizagem..."
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-slate-700 resize-none"

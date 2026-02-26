@@ -141,8 +141,38 @@ export async function createGuiaManual(prevState: any, formData: FormData) {
         const total_aulas = parseInt(formData.get('total_aulas') as string) || 20
         const ano_letivo = parseInt(formData.get('ano_letivo') as string) || new Date().getFullYear()
 
+        const weekIdsStr = formData.get('week_ids') as string
+        const weekIds = weekIdsStr ? weekIdsStr.split(',') : []
+
         if (!turma_id || !disciplina_id) {
             return { error: 'Turma e Disciplina são obrigatórios.' }
+        }
+
+        if (weekIds.length === 0) {
+            return { error: 'Você deve adicionar pelo menos uma semana.' }
+        }
+
+        // Validate all weeks before doing any database insert
+        const semanasParaInserir = []
+        for (const weekId of weekIds) {
+            const data_semana = formData.get(`semana_${weekId}_data`) as string
+            const conteudos = formData.get(`semana_${weekId}_conteudos`) as string
+            const estrategias_didaticas = formData.get(`semana_${weekId}_estrategias`) as string
+            const metodologias = formData.get(`semana_${weekId}_metodologias`) as string
+            const avaliacao = formData.get(`semana_${weekId}_avaliacao`) as string
+
+            if (!data_semana || !conteudos || !estrategias_didaticas || !metodologias || !avaliacao) {
+                return { error: 'Todos os campos de todas as semanas devem ser preenchidos.' }
+            }
+
+            semanasParaInserir.push({
+                data_semana,
+                conteudos,
+                estrategias_didaticas,
+                metodologias,
+                avaliacao,
+                status_validacao: 'Pendente'
+            })
         }
 
         const adminClient = getServiceClient()
@@ -185,6 +215,22 @@ export async function createGuiaManual(prevState: any, formData: FormData) {
         if (insertError || !newGuia) {
             console.error('Erro ao inserir guia manual:', insertError)
             return { error: 'Ocorreu um erro ao criar o Guia. Tente novamente.' }
+        }
+
+        // Insert Weeks
+        const semanasComGuiaId = semanasParaInserir.map(semana => ({
+            ...semana,
+            guia_id: newGuia.id
+        }))
+
+        const { error: errorSemanas } = await adminClient
+            .from('semanas_guia')
+            .insert(semanasComGuiaId)
+
+        if (errorSemanas) {
+            console.error('Erro ao inserir semanas manuais:', errorSemanas)
+            // Ideally we would rollback the guide here, but let's just return error
+            return { error: 'O Guia foi criado, mas houve um erro ao preencher as semanas. Tente inseri-las na tela do guia.' }
         }
 
         revalidatePath('/dashboard/guias')
