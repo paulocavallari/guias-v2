@@ -140,7 +140,6 @@ export async function createGuiaManual(prevState: any, formData: FormData) {
         const bimestre = parseInt(formData.get('bimestre') as string) || 1
         const total_aulas = parseInt(formData.get('total_aulas') as string) || 20
         const ano_letivo = parseInt(formData.get('ano_letivo') as string) || new Date().getFullYear()
-        const justificativa = formData.get('justificativa') as string
 
         if (!turma_id || !disciplina_id) {
             return { error: 'Turma e Disciplina são obrigatórios.' }
@@ -178,7 +177,6 @@ export async function createGuiaManual(prevState: any, formData: FormData) {
                 bimestre: bimestre,
                 total_aulas_bimestre: total_aulas,
                 ano_letivo: ano_letivo,
-                justificativa: justificativa || null,
                 concluido: false
             }])
             .select('id')

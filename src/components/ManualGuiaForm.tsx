@@ -122,17 +122,6 @@ export default function ManualGuiaForm({ turmas, disciplinas }: { turmas: Turma[
                     </div>
                 </div>
 
-                {/* Justificativa Opcional */}
-                <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                        Justificativa <span className="text-slate-400 font-normal">(Opcional)</span>
-                    </label>
-                    <textarea
-                        name="justificativa"
-                        rows={2}
-                        placeholder="Ex: Guia adaptado para inclusão..."
-                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-slate-700 resize-none"
-                    ></textarea>
                 </div>
             </div>
 
@@ -151,6 +140,6 @@ export default function ManualGuiaForm({ turmas, disciplinas }: { turmas: Turma[
                 )}
                 {isPending ? 'Criando novo guia...' : 'Criar Guia Manualmente'}
             </button>
-        </form>
+        </form >
     )
 }
