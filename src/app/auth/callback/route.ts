@@ -75,25 +75,26 @@ export async function GET(request: Request) {
         .maybeSingle()
 
     if (existingUser) {
-        // Usuário existe: atualizar nome, email e role (se for Admin, sempre sobrescreve)
+        // Usuário existe: atualizar APENAS nome e email.
+        // A role NÃO é sobrescrita — preserva promoções manuais (ex: Admin, CGPG)
         const { error: updateError } = await adminClient
             .from('usuarios')
-            .update({ nome, email, role })
+            .update({ nome, email })
             .eq('id', user.id)
 
         if (updateError) {
             console.error('[AUTH CALLBACK] Erro ao atualizar usuário:', updateError.message)
         } else {
-            console.log(`[AUTH CALLBACK] Usuário atualizado: ${email} → ${role}`)
+            console.log(`[AUTH CALLBACK] Usuário atualizado (role mantida: ${existingUser.role}): ${email}`)
         }
     } else {
-        // Usuário NÃO existe: inserir novo registro
+        // Usuário NÃO existe: inserir novo com role baseada no domínio de e-mail
         const { error: insertError } = await adminClient
             .from('usuarios')
             .insert({ id: user.id, email, nome, role })
 
         if (insertError) {
-            console.error('[AUTH CALLBACK] Erro ao inserir usuário:', insertError.message, JSON.stringify(insertError))
+            console.error('[AUTH CALLBACK] Erro ao inserir usuário:', insertError.message, insertError.details)
         } else {
             console.log(`[AUTH CALLBACK] Usuário criado: ${email} → ${role}`)
         }
