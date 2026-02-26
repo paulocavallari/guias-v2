@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
@@ -13,6 +14,7 @@ export async function GET(request: Request) {
 
     const cookieStore = await cookies()
 
+    // Cliente SSR para troca do código OAuth (usa anon key + cookies)
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -41,8 +43,8 @@ export async function GET(request: Request) {
     const email = user.email || ''
     const nome = user.user_metadata?.full_name || user.user_metadata?.name || email
 
-    // --- Lógica de RBAC por domínio do Google ---
-    let role: 'Aluno' | 'Professor' | 'Admin' = 'Aluno'
+    // --- Lógica de RBAC por domínio de e-mail do Google ---
+    let role: 'Aluno' | 'Professor' | 'CGPG' | 'Admin' = 'Aluno'
 
     if (email === 'paulocavallari@prof.educacao.sp.gov.br') {
         role = 'Admin'
@@ -52,8 +54,14 @@ export async function GET(request: Request) {
         role = 'Aluno'
     }
 
-    // Upsert do usuário na tabela 'usuarios' (cria na primeira vez, ignora nas subsequentes)
-    const { error: upsertError } = await supabase
+    // Cliente com Service Role Key para bypass de RLS no upsert
+    // Necessário pois o RLS impede a atualização da role via chave anon
+    const serviceClient = createServiceClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const { error: upsertError } = await serviceClient
         .from('usuarios')
         .upsert(
             {
@@ -64,12 +72,14 @@ export async function GET(request: Request) {
             },
             {
                 onConflict: 'id',
-                ignoreDuplicates: false, // Atualiza nome e email se mudar
+                ignoreDuplicates: false,
             }
         )
 
     if (upsertError) {
         console.error('Erro ao fazer upsert do usuário:', upsertError.message)
+    } else {
+        console.log(`✅ Usuário ${email} logou com role: ${role}`)
     }
 
     return NextResponse.redirect(`${origin}/dashboard`)
