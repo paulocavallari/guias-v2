@@ -14,15 +14,13 @@ export async function GET(request: Request) {
 
     const cookieStore = await cookies()
 
-    // Cliente SSR para troca do código OAuth (usa anon key + cookies)
+    // 1. Cliente SSR para trocar o código OAuth pela sessão
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
             cookies: {
-                getAll() {
-                    return cookieStore.getAll()
-                },
+                getAll() { return cookieStore.getAll() },
                 setAll(cookiesToSet) {
                     cookiesToSet.forEach(({ name, value, options }) =>
                         cookieStore.set(name, value, options)
@@ -35,15 +33,15 @@ export async function GET(request: Request) {
     const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error || !session?.user) {
-        console.error('Erro na troca de código:', error?.message)
+        console.error('[AUTH CALLBACK] Erro na troca de código:', error?.message)
         return NextResponse.redirect(`${origin}/auth/login?error=auth_failed`)
     }
 
     const user = session.user
     const email = user.email || ''
-    const nome = user.user_metadata?.full_name || user.user_metadata?.name || email
+    const nome = user.user_metadata?.full_name || user.user_metadata?.name || email.split('@')[0]
 
-    // --- Lógica de RBAC por domínio de e-mail do Google ---
+    // 2. Lógica de RBAC pelos novos domínios Google SEDUC
     let role: 'Aluno' | 'Professor' | 'CGPG' | 'Admin' = 'Aluno'
 
     if (email === 'paulocavallari@prof.educacao.sp.gov.br') {
@@ -54,32 +52,51 @@ export async function GET(request: Request) {
         role = 'Aluno'
     }
 
-    // Cliente com Service Role Key para bypass de RLS no upsert
-    // Necessário pois o RLS impede a atualização da role via chave anon
-    const serviceClient = createServiceClient(
+    console.log(`[AUTH CALLBACK] Email: ${email} | Role determinada: ${role}`)
+
+    // 3. Verificar se a Service Role Key está configurada
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!serviceRoleKey) {
+        console.error('[AUTH CALLBACK] SUPABASE_SERVICE_ROLE_KEY não está configurada no .env.local!')
+        return NextResponse.redirect(`${origin}/dashboard`)
+    }
+
+    // 4. Usar Service Role Key (bypass RLS) para criar/atualizar o usuário
+    const adminClient = createServiceClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
+        serviceRoleKey
     )
 
-    const { error: upsertError } = await serviceClient
+    // Primeiro, verificar se o usuário já existe
+    const { data: existingUser } = await adminClient
         .from('usuarios')
-        .upsert(
-            {
-                id: user.id,
-                email: email,
-                nome: nome,
-                role: role,
-            },
-            {
-                onConflict: 'id',
-                ignoreDuplicates: false,
-            }
-        )
+        .select('id, role')
+        .eq('id', user.id)
+        .maybeSingle()
 
-    if (upsertError) {
-        console.error('Erro ao fazer upsert do usuário:', upsertError.message)
+    if (existingUser) {
+        // Usuário existe: atualizar nome, email e role (se for Admin, sempre sobrescreve)
+        const { error: updateError } = await adminClient
+            .from('usuarios')
+            .update({ nome, email, role })
+            .eq('id', user.id)
+
+        if (updateError) {
+            console.error('[AUTH CALLBACK] Erro ao atualizar usuário:', updateError.message)
+        } else {
+            console.log(`[AUTH CALLBACK] Usuário atualizado: ${email} → ${role}`)
+        }
     } else {
-        console.log(`✅ Usuário ${email} logou com role: ${role}`)
+        // Usuário NÃO existe: inserir novo registro
+        const { error: insertError } = await adminClient
+            .from('usuarios')
+            .insert({ id: user.id, email, nome, role })
+
+        if (insertError) {
+            console.error('[AUTH CALLBACK] Erro ao inserir usuário:', insertError.message, JSON.stringify(insertError))
+        } else {
+            console.log(`[AUTH CALLBACK] Usuário criado: ${email} → ${role}`)
+        }
     }
 
     return NextResponse.redirect(`${origin}/dashboard`)
