@@ -3,6 +3,9 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, UserPlus, Star, ShieldAlert } from 'lucide-react'
 import { updateAlunoTurma, updateAlunoCargos } from '@/actions/usuarios'
+import { getUserProfile, getServiceClient } from '@/lib/supabase-admin'
+
+export const dynamic = 'force-dynamic'
 
 export default async function TurmaDetailsPage(props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
@@ -11,11 +14,7 @@ export default async function TurmaDetailsPage(props: { params: Promise<{ id: st
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect('/auth/login')
 
-    const { data: dbUser } = await supabase
-        .from('usuarios')
-        .select('role')
-        .eq('id', user.id)
-        .single()
+    const dbUser = await getUserProfile(user.id)
 
     if (dbUser?.role !== 'Admin' && dbUser?.role !== 'CGPG') {
         redirect('/dashboard')
@@ -32,15 +31,17 @@ export default async function TurmaDetailsPage(props: { params: Promise<{ id: st
         return <div className="p-8">Turma não encontrada.</div>
     }
 
-    // Busca Alunos dessa turma
-    const { data: alunosTurma } = await supabase
+    const adminClient = getServiceClient()
+
+    // Busca Alunos dessa turma via service client (bypass RLS)
+    const { data: alunosTurma } = await adminClient
         .from('usuarios')
         .select('*')
         .eq('turma_id', turma.id)
         .order('nome', { ascending: true })
 
     // Busca Alunos sem turma (para poder adicionar)
-    const { data: alunosSemTurma } = await supabase
+    const { data: alunosSemTurma } = await adminClient
         .from('usuarios')
         .select('*')
         .eq('role', 'Aluno')

@@ -2,6 +2,9 @@ import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { Plus, Trash2, Library } from 'lucide-react'
 import { addDisciplina, deleteDisciplina } from '@/actions/disciplinas'
+import { getUserProfile } from '@/lib/supabase-admin'
+
+export const dynamic = 'force-dynamic'
 
 export default async function DisciplinasPage() {
     const supabase = await createClient()
@@ -9,11 +12,7 @@ export default async function DisciplinasPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect('/auth/login')
 
-    const { data: dbUser } = await supabase
-        .from('usuarios')
-        .select('role')
-        .eq('id', user.id)
-        .single()
+    const dbUser = await getUserProfile(user.id)
 
     if (dbUser?.role !== 'Admin' && dbUser?.role !== 'CGPG') {
         return (
