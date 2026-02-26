@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, BookOpenText, Target, CalendarDays, BookCheck } from 'lucide-react'
+import { Plus, BookOpenText, Target, CalendarDays, BookCheck, Sparkles, Pencil } from 'lucide-react'
 import { getUserProfile } from '@/lib/supabase-admin'
 
 export const dynamic = 'force-dynamic'
@@ -45,13 +45,22 @@ export default async function GuiasPage() {
                 </div>
 
                 {(dbUser?.role === 'Professor' || dbUser?.role === 'Admin') && (
-                    <Link
-                        href="/dashboard/guias/nova"
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-sm"
-                    >
-                        <Plus className="w-5 h-5" />
-                        Nova Importação via IA
-                    </Link>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <Link
+                            href="/dashboard/guias/nova-manual"
+                            className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-medium px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm"
+                        >
+                            <Pencil className="w-4 h-4 text-emerald-500" />
+                            Escrita Manual
+                        </Link>
+                        <Link
+                            href="/dashboard/guias/nova"
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm"
+                        >
+                            <Sparkles className="w-4 h-4 text-amber-300" />
+                            Importar com IA
+                        </Link>
+                    </div>
                 )}
             </div>
 
