@@ -121,16 +121,14 @@ export default function ManualGuiaForm({ turmas, disciplinas }: { turmas: Turma[
                         />
                     </div>
                 </div>
-
-                </div>
             </div>
 
             <button
                 type="submit"
                 disabled={isPending || !selectedTurma || !selectedDisciplina}
                 className={`w-full py-4 font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 text-white ${!selectedTurma || !selectedDisciplina
-                        ? 'bg-slate-300 cursor-not-allowed shadow-none'
-                        : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 hover:shadow-xl cursor-pointer'
+                    ? 'bg-slate-300 cursor-not-allowed shadow-none'
+                    : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 hover:shadow-xl cursor-pointer'
                     }`}
             >
                 {isPending ? (
