@@ -75,17 +75,23 @@ export async function GET(request: Request) {
         .maybeSingle()
 
     if (existingUser) {
-        // Usuário existe: atualizar APENAS nome e email.
-        // A role NÃO é sobrescrita — preserva promoções manuais (ex: Admin, CGPG)
+        // Usuário existe: atualizar nome e email.
+        // A role NÃO é sobrescrita — EXCETO para o email admin, que sempre deve ter role 'Admin'.
+        const isAdminEmail = email === 'paulocavallari@prof.educacao.sp.gov.br'
+        const updatePayload: { nome: string; email: string; role?: string } = { nome, email }
+        if (isAdminEmail && existingUser.role !== 'Admin') {
+            updatePayload.role = 'Admin'
+        }
+
         const { error: updateError } = await adminClient
             .from('usuarios')
-            .update({ nome, email })
+            .update(updatePayload)
             .eq('id', user.id)
 
         if (updateError) {
             console.error('[AUTH CALLBACK] Erro ao atualizar usuário:', updateError.message)
         } else {
-            console.log(`[AUTH CALLBACK] Usuário atualizado (role mantida: ${existingUser.role}): ${email}`)
+            console.log(`[AUTH CALLBACK] Usuário atualizado (role: ${updatePayload.role ?? existingUser.role}): ${email}`)
         }
     } else {
         // Usuário NÃO existe: inserir novo com role baseada no domínio de e-mail
