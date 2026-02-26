@@ -13,7 +13,7 @@ const MODELS_FALLBACK_CHAIN = [
     'microsoft/phi-3-mini-128k-instruct:free',
 ]
 
-const TIMEOUT_MS = 15000 // 15 segundos max
+const TIMEOUT_MS = 40000 // 40 segundos por modelo
 
 /**
  * Função utilitária que adiciona timeout numa Promise (fetch)
