@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, Clock, FileEdit, GraduationCap, ShieldCheck, C
 import Link from 'next/link'
 import { salvarApontamento, validarSemana } from '@/actions/semanas'
 import ExportPdfButton from '@/components/ExportPdfButton'
+import WeeklyContentForm from '@/components/WeeklyContentForm'
 import { getUserProfile } from '@/lib/supabase-admin'
 
 export const dynamic = 'force-dynamic'
@@ -96,6 +97,11 @@ export default async function GuiaDetailsPage(props: { params: Promise<{ id: str
                     </div>
                 </div>
             </div>
+
+            {/* Formulário de Adição (Apenas Professor do Guia ou Admin) */}
+            {isProfessorGuia && (
+                <WeeklyContentForm guiaId={guia.id} novaSemanaNumero={(semanas?.length || 0) + 1} />
+            )}
 
             {/* Linha do Tempo das Semanas */}
             <div className="space-y-6">

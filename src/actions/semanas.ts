@@ -95,3 +95,48 @@ export async function validarSemana(semanaId: string, guiaId: string, formData: 
     revalidatePath(`/dashboard/guias/${guiaId}`)
     return { success: true }
 }
+
+export async function addWeeklyContent(prevState: any, formData: FormData) {
+    const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Não autorizado. Faça login novamente.' }
+
+    const dbUser = await getUserProfile(user.id)
+    if (dbUser?.role !== 'Professor' && dbUser?.role !== 'Admin') {
+        return { error: 'Apenas professores e administradores podem adicionar conteúdo.' }
+    }
+
+    const guia_id = formData.get('guia_id') as string
+    const data_semana = formData.get('data_semana') as string
+    const conteudos = formData.get('conteudos') as string
+    const estrategias_didaticas = formData.get('estrategias_didaticas') as string
+    const metodologias = formData.get('metodologias') as string
+    const avaliacao = formData.get('avaliacao') as string
+
+    if (!guia_id || !data_semana || !conteudos || !estrategias_didaticas) {
+        return { error: 'Preencha todos os campos obrigatórios.' }
+    }
+
+    const adminClient = getServiceClient()
+
+    const { error } = await adminClient
+        .from('semanas_guia')
+        .insert([{
+            guia_id,
+            data_semana,
+            conteudos,
+            estrategias_didaticas,
+            metodologias: metodologias || '',
+            avaliacao: avaliacao || '',
+            status_validacao: 'Pendente'
+        }])
+
+    if (error) {
+        console.error('Erro ao adicionar semana:', error)
+        return { error: 'Ocorreu um erro ao salvar a semana.' }
+    }
+
+    revalidatePath(`/dashboard/guias/${guia_id}`)
+    return { success: true }
+}
