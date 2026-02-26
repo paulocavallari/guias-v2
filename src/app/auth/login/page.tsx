@@ -20,10 +20,10 @@ export default function LoginPage() {
             provider: 'google',
             options: {
                 queryParams: {
-                    // Força a seleção de conta Google a cada login
                     prompt: 'select_account',
                 },
-                redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+                // Usa o origin atual — funciona em localhost E em produção (Vercel)
+                redirectTo: `${window.location.origin}/auth/callback`,
             },
         })
 
