@@ -99,7 +99,7 @@ export async function parseDocxWithAI(extractedText: string) {
             return content
 
         } catch (error: any) {
-            console.warn(`[OpenRouter] Falha ou Timeout (15s) no modelo ${model}. Saltando para o próximo... Detalhe: ${error.message}`)
+            console.warn(`[OpenRouter] Falha ou Timeout (${TIMEOUT_MS / 1000}s) no modelo ${model}. Saltando para o próximo... Detalhe: ${error.message}`)
             continue // Try next model in the chain
         }
     }

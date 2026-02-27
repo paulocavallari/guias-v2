@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/server'
 import { getServiceClient, getUserProfile } from '@/lib/supabase-admin'
 import { revalidatePath } from 'next/cache'
 
-export async function updateUserRole(userId: string, _currentRole: string, formData: FormData) {
+export async function updateUserRole(userId: string, formData: FormData) {
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()

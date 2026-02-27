@@ -1,7 +1,7 @@
 'use client'
 
-import { useActionState, useEffect, useRef } from 'react'
-import { Plus, Loader2, Save } from 'lucide-react'
+import { useActionState, useEffect, useRef, useState } from 'react'
+import { Plus, Loader2, Save, CheckCircle2 } from 'lucide-react'
 import { addWeeklyContent } from '@/actions/semanas'
 import { useRouter } from 'next/navigation'
 
@@ -9,11 +9,16 @@ export default function WeeklyContentForm({ guiaId, novaSemanaNumero }: { guiaId
     const router = useRouter()
     const [state, formAction, isPending] = useActionState(addWeeklyContent, null)
     const formRef = useRef<HTMLFormElement>(null)
+    const [showSuccess, setShowSuccess] = useState(false)
 
     useEffect(() => {
         if (state?.success) {
             formRef.current?.reset()
+            setShowSuccess(true)
             router.refresh()
+            // Auto-hide success toast after 3s
+            const timer = setTimeout(() => setShowSuccess(false), 3000)
+            return () => clearTimeout(timer)
         }
     }, [state, router])
 
@@ -30,6 +35,14 @@ export default function WeeklyContentForm({ guiaId, novaSemanaNumero }: { guiaId
 
             <form ref={formRef} action={formAction} className="p-6 space-y-6">
                 <input type="hidden" name="guia_id" value={guiaId} />
+
+                {/* Toast de Sucesso */}
+                {showSuccess && (
+                    <div className="bg-emerald-50 text-emerald-700 p-4 rounded-xl text-sm border border-emerald-100 flex items-center gap-3 animate-pulse">
+                        <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                        <span className="font-semibold">Semana salva com sucesso!</span>
+                    </div>
+                )}
 
                 {state?.error && (
                     <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-100">

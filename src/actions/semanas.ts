@@ -84,8 +84,12 @@ export async function validarSemana(semanaId: string, guiaId: string, formData: 
                 const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
                 const turmasObj: any = info.turmas
                 const mensagem = `🌟 *Alerta de Conclusão!*\nO Guia de Aprendizagem de *${info.disciplina_nome}* da turma *${info.ano_serie} ${turmasObj?.nome || ''}* foi 100% validado e concluído com sucesso.\n\nAcesse o painel CGPG para mais detalhes.`
-                const numeroWhatsAppCGPG = "5511999999999"
-                await sendWhatsAppMessage(numeroWhatsAppCGPG, mensagem)
+                const numeroWhatsAppCGPG = process.env.WHATSAPP_CGPG_NUMBER
+                if (!numeroWhatsAppCGPG) {
+                    console.warn('[validarSemana] WHATSAPP_CGPG_NUMBER não configurado. Notificação não enviada.')
+                } else {
+                    await sendWhatsAppMessage(numeroWhatsAppCGPG, mensagem)
+                }
             } catch (e) {
                 console.warn('WhatsApp notification failed (non-critical):', e)
             }
@@ -114,11 +118,25 @@ export async function addWeeklyContent(prevState: any, formData: FormData) {
     const metodologias = formData.get('metodologias') as string
     const avaliacao = formData.get('avaliacao') as string
 
-    if (!guia_id || !data_semana || !conteudos || !estrategias_didaticas) {
+    if (!guia_id || !data_semana || !conteudos || !estrategias_didaticas || !metodologias || !avaliacao) {
         return { error: 'Preencha todos os campos obrigatórios.' }
     }
 
     const adminClient = getServiceClient()
+
+    // 🔒 Verificar se o usuário é o dono do guia (ou Admin)
+    if (dbUser.role !== 'Admin') {
+        const { data: guia, error: guiaError } = await adminClient
+            .from('guias_aprendizagem')
+            .select('professor_id')
+            .eq('id', guia_id)
+            .single()
+
+        if (guiaError || !guia) return { error: 'Guia não encontrado.' }
+        if (guia.professor_id !== user.id) {
+            return { error: 'Você não tem permissão para editar este guia.' }
+        }
+    }
 
     const { error } = await adminClient
         .from('semanas_guia')
@@ -127,8 +145,8 @@ export async function addWeeklyContent(prevState: any, formData: FormData) {
             data_semana,
             conteudos,
             estrategias_didaticas,
-            metodologias: metodologias || '',
-            avaliacao: avaliacao || '',
+            metodologias,
+            avaliacao,
             status_validacao: 'Pendente'
         }])
 

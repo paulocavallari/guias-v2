@@ -170,7 +170,11 @@ export default function ManualGuiaForm({ turmas, disciplinas }: { turmas: Turma[
                             {weeks.length > 1 && (
                                 <button
                                     type="button"
-                                    onClick={() => removeWeek(weekId)}
+                                    onClick={() => {
+                                        if (window.confirm(`Remover a Semana ${index + 1}? Todo o conteúdo preenchido será perdido.`)) {
+                                            removeWeek(weekId)
+                                        }
+                                    }}
                                     className="text-slate-400 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50"
                                     title="Remover semana"
                                 >
@@ -250,21 +254,28 @@ export default function ManualGuiaForm({ turmas, disciplinas }: { turmas: Turma[
                 </button>
             </div>
 
-            <button
-                type="submit"
-                disabled={isPending || !selectedTurma || !selectedDisciplina}
-                className={`w-full py-4 font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 text-white ${!selectedTurma || !selectedDisciplina
-                    ? 'bg-slate-300 cursor-not-allowed shadow-none'
-                    : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 hover:shadow-xl cursor-pointer'
-                    }`}
-            >
-                {isPending ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                    <CalendarDays className="w-5 h-5" />
-                )}
-                {isPending ? 'Salvando Guia e Semanas...' : 'Salvar Guia de Aprendizagem'}
-            </button>
+            {/* Contador e botão de envio */}
+            <div className="flex items-center justify-between bg-slate-100 rounded-2xl px-6 py-4">
+                <div className="text-sm font-semibold text-slate-600">
+                    <span className="bg-indigo-600 text-white rounded-lg px-2.5 py-1 mr-2 font-bold">{weeks.length}</span>
+                    {weeks.length === 1 ? 'semana planejada' : 'semanas planejadas'}
+                </div>
+                <button
+                    type="submit"
+                    disabled={isPending || !selectedTurma || !selectedDisciplina}
+                    className={`font-bold py-3 px-8 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 text-white ${!selectedTurma || !selectedDisciplina
+                            ? 'bg-slate-300 cursor-not-allowed shadow-none'
+                            : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 hover:shadow-xl cursor-pointer'
+                        }`}
+                >
+                    {isPending ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                        <CalendarDays className="w-5 h-5" />
+                    )}
+                    {isPending ? 'Salvando Guia e Semanas...' : 'Salvar Guia de Aprendizagem'}
+                </button>
+            </div>
         </form >
     )
 }

@@ -77,7 +77,7 @@ export default async function AdminUsuariosPage() {
 
                                 {/* Cada usuário tem seu próprio form isolado */}
                                 {u.id !== user.id && (
-                                    <form action={updateUserRole.bind(null, u.id, u.role, null as any) as any} className="flex items-center gap-2">
+                                    <form action={updateUserRole.bind(null, u.id) as any} className="flex items-center gap-2">
                                         <select
                                             name="newRole"
                                             defaultValue={u.role}

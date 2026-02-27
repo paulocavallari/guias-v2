@@ -1,10 +1,16 @@
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { createClient as createServiceClient, SupabaseClient } from '@supabase/supabase-js'
+
+// Singleton: reutiliza a mesma instância entre chamadas no mesmo processo
+let _serviceClient: SupabaseClient | null = null
 
 /**
- * Cria um cliente Supabase com a Service Role Key (bypass total de RLS).
+ * Cria (ou reutiliza) um cliente Supabase com a Service Role Key (bypass total de RLS).
+ * Singleton para evitar múltiplas instâncias por request.
  * Use APENAS em Server Components e Server Actions — nunca no client.
  */
-export function getServiceClient() {
+export function getServiceClient(): SupabaseClient {
+    if (_serviceClient) return _serviceClient
+
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
@@ -12,7 +18,8 @@ export function getServiceClient() {
         throw new Error('NEXT_PUBLIC_SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY não configuradas.')
     }
 
-    return createServiceClient(url, key)
+    _serviceClient = createServiceClient(url, key)
+    return _serviceClient
 }
 
 /**

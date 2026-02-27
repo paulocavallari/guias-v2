@@ -229,8 +229,9 @@ export async function createGuiaManual(prevState: any, formData: FormData) {
 
         if (errorSemanas) {
             console.error('Erro ao inserir semanas manuais:', errorSemanas)
-            // Ideally we would rollback the guide here, but let's just return error
-            return { error: 'O Guia foi criado, mas houve um erro ao preencher as semanas. Tente inseri-las na tela do guia.' }
+            // Rollback: deletar o guia criado para evitar guia zumbi no banco
+            await adminClient.from('guias_aprendizagem').delete().eq('id', newGuia.id)
+            return { error: 'Falha ao salvar as semanas. O guia foi revertido. Tente novamente.' }
         }
 
         revalidatePath('/dashboard/guias')

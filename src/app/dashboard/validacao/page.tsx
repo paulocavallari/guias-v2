@@ -20,14 +20,14 @@ export default async function ValidacaoPage() {
     }
 
     // Buscar todos os guias do professor com semanas aguardando validação
-    const guiasQuery = supabase
+    let guiasQuery = supabase
         .from('guias_aprendizagem')
         .select('id, disciplina_nome, ano_serie, bimestre, ano_letivo, turmas(nome)')
         .order('created_at', { ascending: false })
 
     if (dbUser.role === 'Professor') {
         // Professor só vê seus próprios guias
-        (guiasQuery as any).eq('professor_id', user.id)
+        guiasQuery = guiasQuery.eq('professor_id', user.id)
     }
 
     const { data: guias } = await guiasQuery
